@@ -208,7 +208,8 @@ svg{display:block;width:900px;height:900px;overflow:visible;}
   <div class="sep"></div>
   <span style="font-family:'IM Fell English',serif;font-size:11px;color:var(--text-dim);white-space:nowrap;flex-shrink:0;font-style:italic;">Mappa di Eradriel</span>
   <div class="sep"></div>
-  <button class="tb" id="btn-import">📥 Importa Mappa</button>
+  <button class="tb" id="btn-sync">🔄 Aggiorna</button>
+  <button class="tb" id="btn-import">📥 Importa</button>
 </div>
 <!-- Hidden file input for import -->
 <input type="file" id="file-input" accept=".json" style="display:none">
@@ -558,6 +559,8 @@ document.getElementById('legend').addEventListener('click',()=>{
 });
 
 /* ── IMPORT ── */
+const MAP_URL = 'https://peetah002.github.io/mappa.json';
+
 function importMap(json){
   try{
     const data=JSON.parse(json);
@@ -568,6 +571,21 @@ function importMap(json){
     renderAll(); toast('Mappa importata ✓');
   } catch(e){ toast('Errore: file non valido'); }
 }
+
+// 🔄 Sync from GitHub
+document.getElementById('btn-sync').addEventListener('click', async ()=>{
+  toast('Caricamento...');
+  try{
+    const res = await fetch(MAP_URL + '?t=' + Date.now()); // cache-bust
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    const json = await res.text();
+    importMap(json);
+  } catch(e){
+    toast('Errore connessione — prova a importare manualmente');
+  }
+});
+
+// 📥 Import from local file
 document.getElementById('btn-import').addEventListener('click',()=>{
   document.getElementById('file-input').click();
 });
