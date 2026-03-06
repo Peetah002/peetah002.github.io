@@ -1,67 +1,62 @@
-# Eradriel Map
+# 🗺️ Eradriel Map
 
-Progetto personale per la mia campagna di D&D ambientata nel mondo di **Eradriel**.
+> An interactive fantasy world map for my D&D campaign, hosted on GitHub Pages — no installs, no PDFs, no Discord file dumps.
 
----
+***
 
-## Cos'è
+## 📖 Overview
 
-Una mappa interattiva del mondo di gioco, hostata su GitHub Pages, pensata per due scopi distinti: tenerla aggiornata io come DM sessione per sessione, e mostrarla ai giocatori in tempo reale senza che debbano installare niente o aprire PDF.
+**Eradriel Map** is a lightweight, browser-based interactive map built for a homebrew D&D campaign. It solves a simple problem: I was tired of editing maps in Inkscape, exporting them, and sending files to Discord before every session. Now I update a JSON file, push it, and my players are synced.
 
-Niente di sofisticato. L'ho costruita perché mi seccava aggiornare una mappa su Inkscape, esportarla, mandarla su Discord, e poi ricominciare la sessione successiva. Volevo qualcosa che funzionasse dal browser, anche da telefono, e che potessi aggiornare in cinque minuti prima di giocare.
+The map evolves alongside the campaign — cities can become ruins, new locations unlock as the party explores, and points of interest appear as players discover them. The world changes because the characters change it.
 
----
+***
 
-## Come funziona
+## ✨ Features
 
-Il progetto è composto da due file HTML e un file JSON:
+### 🧙 DM View (`eradriel_map.html`)
+- Draw and edit **regions** — colored polygons with name and subtitle
+- Add, move, and edit **locations** — cities, ruins, points of interest, and mission targets
+- Mark locations as **discovered**, **active**, or **destroyed** to reflect the party's journey
+- Drag the **Tower of Nartharion** (party base) anywhere on the map
+- Export map state to `mappa.json`
+- Full pan & zoom — mouse and touch supported
+- Data persisted in `localStorage`
 
-### `eradriel_map.html` — Vista DM
-La versione completa, accessibile solo a me. Permette di:
-- Disegnare e modificare le **regioni** della mappa (poligoni colorati con nome e sottotitolo)
-- Aggiungere, spostare e modificare le **città** con tipo, nome, popolazione e regione di appartenenza
-- Spostare la **Torre di Nartharion** (sede del party) trascinandola sulla mappa
-- Esportare tutto in un file `mappa.json`
-- Resettare la mappa se necessario
+### 👥 Player View (`index.html`)
+- Read-only map showing only what the party has discovered
+- Tap any location to see its name, type, and available info
+- **Update** button — fetches the latest `mappa.json` from GitHub Pages
+- **Import** button — loads a local JSON file as fallback
 
-La mappa supporta pan e zoom sia da mouse che da touch, e tutti i dati vengono salvati in `localStorage` per non perderli tra una sessione e l'altra.
+***
 
-### `index.html` — Vista Giocatori
-La versione di sola lettura, quella che i giocatori aprono dal browser. Hanno la mappa aggiornata all'ultima sessione, possono zoomare, spostarsi, e toccare una città per vedere il suo nome e le informazioni base. Nessun controllo di modifica.
+## ⚔️ Session Workflow
 
-Hanno due pulsanti:
-- **Aggiorna** — scarica automaticamente il `mappa.json` aggiornato da GitHub
-- **Importa** — carica manualmente un file JSON locale, come fallback
+1. Open `eradriel_map.html` locally before the session
+2. Update the map — add new locations, mark discoveries, turn cities to ruins, reveal mission targets
+3. Export `mappa.json` and push it to the repo
+4. Players open `index.html` and hit **Update** — the world has moved on
 
-### `mappa.json` — I dati
-Il file JSON che contiene lo stato della mappa: regioni, città, e posizione della torre. Viene generato dal tool DM ed è quello che i giocatori scaricano per aggiornarsi. Non è nel repository (viene pubblicato separatamente su GitHub Pages).
+***
 
----
+## 🎨 Visual Style
 
-## Workflow sessione per sessione
+Old fantasy map aesthetic: **Cinzel** and **IM Fell English** fonts, gold and ink color palette, compass rose, legend, and vignette border. Built entirely with SVG — no canvas, no external libraries.
 
-1. Prima della sessione apro `eradriel_map.html` in locale
-2. Aggiungo o modifico regioni e città in base a cosa è successo nella sessione precedente
-3. Esporto il `mappa.json` e lo carico su GitHub Pages (nella stessa repo, come file statico)
-4. I giocatori aprono `index.html` e premono **Aggiorna** per ricevere la mappa aggiornata
+***
 
----
+## 🛠️ Stack
 
-## Stile
+| Layer | Technology |
+|---|---|
+| Frontend | Vanilla HTML, CSS, JavaScript |
+| Hosting | GitHub Pages |
+| Persistence (DM) | `localStorage` |
+| Sync (Players) | `fetch` API |
 
-L'estetica è volutamente da mappa fantasy antica: font tipografici (Cinzel, IM Fell English), colori oro e inchiostro, bussola, legenda, vignettatura. Tutto SVG, niente canvas, niente librerie esterne oltre ai Google Fonts.
+***
 
----
+## 📝 Notes
 
-## Stack
-
-- HTML + CSS + JavaScript vanilla, zero dipendenze
-- GitHub Pages per l'hosting
-- `localStorage` per la persistenza dei dati lato DM
-- `fetch` per il sync automatico lato giocatori
-
----
-
-## Note
-
-Il progetto è pensato per uso personale e non è costruito per scalare o per essere riutilizzato da altri così com'è. Non c'è autenticazione, non c'è backend, non c'è niente di complicato — e va bene così.
+This project is built for personal use and isn't designed to scale or be repurposed out of the box. There's no authentication, no backend, and no build step — and that's intentional.
