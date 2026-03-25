@@ -19,15 +19,19 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button'
 import {
   Eye, MapPin, Mountain, Plus, RotateCcw, Upload, Download,
-  Layers, Globe,
+  Layers, Globe, Save,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { getGitHubToken, setGitHubToken, pushMapToGitHub } from '@/lib/github'
 
 export default function EditorPage() {
   const controlsRef = useRef<MapControlsHandle | null>(null)
   const [mounted, setMounted] = useState(false)
   const [resetDialog, setResetDialog] = useState(false)
+  const [tokenDialog, setTokenDialog] = useState(false)
+  const [tokenInput, setTokenInput] = useState('')
+  const [saving, setSaving] = useState(false)
 
   const store = useMapStore()
   const ui = useUIStore()
@@ -323,6 +327,49 @@ export default function EditorPage() {
     input.click()
   }, [importMap])
 
+  const handleSave = useCallback(async () => {
+    const token = getGitHubToken()
+    if (!token) {
+      setTokenDialog(true)
+      return
+    }
+    setSaving(true)
+    try {
+      const data = store.exportPlayerMap()
+      await pushMapToGitHub(token, data)
+      toast.success('Mappa salvata su GitHub')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      if (msg.includes('401') || msg.includes('Bad credentials')) {
+        toast.error('Token non valido — reinseriscilo')
+        setTokenDialog(true)
+      } else {
+        toast.error(`Errore: ${msg}`)
+      }
+    } finally {
+      setSaving(false)
+    }
+  }, [store])
+
+  const handleTokenSubmit = useCallback(async () => {
+    if (!tokenInput.trim()) return
+    setGitHubToken(tokenInput.trim())
+    setTokenDialog(false)
+    setTokenInput('')
+    // Trigger save after token is set
+    setSaving(true)
+    try {
+      const data = store.exportPlayerMap()
+      await pushMapToGitHub(tokenInput.trim(), data)
+      toast.success('Mappa salvata su GitHub')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Errore sconosciuto'
+      toast.error(`Errore: ${msg}`)
+    } finally {
+      setSaving(false)
+    }
+  }, [tokenInput, store])
+
   const handleReset = useCallback(() => {
     resetMap(); setResetDialog(false); setMode('view')
     toast.success('Mappa reimpostata')
@@ -379,6 +426,11 @@ export default function EditorPage() {
         <button onClick={handleExport}
           className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0">
           <Upload size={13} /><span className="hidden sm:inline">Esporta</span>
+        </button>
+
+        <button onClick={handleSave} disabled={saving}
+          className="h-8 px-2.5 rounded-md border bg-accent/80 border-gold-dim text-gold text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold hover:text-gold transition-all flex-shrink-0 disabled:opacity-50">
+          <Save size={13} /><span className="hidden sm:inline">{saving ? 'Salvataggio...' : 'Salva'}</span>
         </button>
 
         <button onClick={() => setResetDialog(true)}
@@ -488,6 +540,30 @@ export default function EditorPage() {
           onResize={handleContinentResize}
         />
       )}
+
+      {/* GitHub token dialog */}
+      <Dialog open={tokenDialog} onOpenChange={setTokenDialog}>
+        <DialogContent className="bg-ink border-gold-dim max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="font-heading text-gold text-sm">GitHub Token</DialogTitle>
+          </DialogHeader>
+          <p className="text-xs text-foreground/80">
+            Inserisci un Personal Access Token con permesso <code className="text-gold">repo</code> per salvare la mappa direttamente su GitHub.
+          </p>
+          <input
+            type="password"
+            value={tokenInput}
+            onChange={e => setTokenInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && handleTokenSubmit()}
+            placeholder="ghp_..."
+            className="w-full px-3 py-2 rounded-md border border-border bg-secondary text-foreground text-sm font-mono"
+          />
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setTokenDialog(false)} className="flex-1 text-xs">Annulla</Button>
+            <Button onClick={handleTokenSubmit} className="flex-1 text-xs">Salva e pubblica</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Reset dialog */}
       <Dialog open={resetDialog} onOpenChange={setResetDialog}>
