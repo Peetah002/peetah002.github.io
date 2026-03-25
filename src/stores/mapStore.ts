@@ -135,6 +135,18 @@ export const useMapStore = create<MapStore>()(
     }),
     {
       name: 'eradriel_v4',
+      version: 2,
+      migrate: (persisted: unknown, version: number) => {
+        const state = persisted as Record<string, unknown>
+        // v0/v1 had continent as { oceanRadius, landRx, landRy } or undefined
+        if (version < 2) {
+          const c = state.continent as Record<string, unknown> | undefined
+          if (!c || !Array.isArray(c.oceanBorder)) {
+            state.continent = cloneContinent()
+          }
+        }
+        return state as unknown as MapStore
+      },
     }
   )
 )
