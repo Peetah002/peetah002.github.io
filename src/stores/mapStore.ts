@@ -2,7 +2,7 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { MapState, Region, City, Tower, TerrainFeature } from '@/types/map'
+import type { MapState, Region, City, Tower, TerrainFeature, ContinentShape } from '@/types/map'
 import { DEF_REGIONS, DEF_CITIES, DEF_TOWER, DEF_TERRAIN } from '@/lib/mapData'
 
 interface MapStore extends MapState {
@@ -19,6 +19,8 @@ interface MapStore extends MapState {
 
   setTower: (tower: Tower) => void
 
+  updateContinent: (data: Partial<ContinentShape>) => void
+
   setTerrain: (terrain: TerrainFeature[]) => void
   addTerrain: (feature: TerrainFeature) => void
   updateTerrain: (id: string, data: Partial<TerrainFeature>) => void
@@ -30,11 +32,14 @@ interface MapStore extends MapState {
   exportPlayerMap: () => Omit<MapState, 'version'> & { version: number }
 }
 
+const DEF_CONTINENT = { oceanRadius: 418, landRx: 355, landRy: 348 }
+
 const defaultState: MapState = {
   regions: DEF_REGIONS.map(r => ({ ...r, pts: r.pts.map(p => [...p] as [number, number]) })),
   cities: DEF_CITIES.map(c => ({ ...c })),
   tower: { ...DEF_TOWER },
   terrain: [...DEF_TERRAIN],
+  continent: { ...DEF_CONTINENT },
   version: 1,
 }
 
@@ -59,6 +64,10 @@ export const useMapStore = create<MapStore>()(
 
       setTower: (tower) => set({ tower }),
 
+      updateContinent: (data) => set(s => ({
+        continent: { ...s.continent, ...data },
+      })),
+
       setTerrain: (terrain) => set({ terrain }),
       addTerrain: (feature) => set(s => ({ terrain: [...s.terrain, feature] })),
       updateTerrain: (id, data) => set(s => ({
@@ -72,6 +81,7 @@ export const useMapStore = create<MapStore>()(
           cities: data.cities ?? get().cities,
           tower: data.tower ?? get().tower,
           terrain: data.terrain ?? get().terrain,
+          continent: data.continent ?? get().continent,
           version: data.version ?? get().version,
         })
       },
@@ -81,18 +91,19 @@ export const useMapStore = create<MapStore>()(
         cities: DEF_CITIES.map(c => ({ ...c })),
         tower: { ...DEF_TOWER },
         terrain: [...DEF_TERRAIN],
+        continent: { ...DEF_CONTINENT },
       }),
 
       exportMap: () => {
-        const { regions, cities, tower, terrain, version } = get()
-        return { regions, cities, tower, terrain, version }
+        const { regions, cities, tower, terrain, continent, version } = get()
+        return { regions, cities, tower, terrain, continent, version }
       },
 
       exportPlayerMap: () => {
-        const { regions, cities, tower, terrain, version } = get()
+        const { regions, cities, tower, terrain, continent, version } = get()
         // Strip DM-only notes from cities
         const playerCities = cities.map(({ notes, ...rest }) => rest) as City[]
-        return { regions, cities: playerCities, tower, terrain, version }
+        return { regions, cities: playerCities, tower, terrain, continent, version }
       },
     }),
     {

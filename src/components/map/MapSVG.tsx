@@ -8,20 +8,28 @@ import { TerrainLayer } from './TerrainLayer'
 import { CityLayer } from './CityLayer'
 import { TowerLayer } from './TowerLayer'
 import { HandleLayer } from './HandleLayer'
-import type { MapState, EditorMode } from '@/types/map'
+import { ContinentHandles } from './ContinentHandles'
+import type { MapState, EditorMode, ContinentShape } from '@/types/map'
 
 interface MapSVGProps {
   state: MapState
   mode: EditorMode
   selectedRegion: string | null
   selectedCity: string | null
+  selectedTerrain: string | null
   onRegionClick?: (id: string) => void
   onCityClick?: (id: string) => void
   onTerrainClick?: (id: string) => void
   onVertexDrag?: (regionId: string, vertexIndex: number, x: number, y: number) => void
+  onTerrainVertexDrag?: (terrainId: string, vertexIndex: number, x: number, y: number) => void
+  onCityDrag?: (cityId: string, x: number, y: number) => void
+  onCityDragEnd?: () => void
   onDragEnd?: () => void
   getMapCoords?: (clientX: number, clientY: number) => [number, number]
   onMapClick?: (x: number, y: number) => void
+  onEdgeClick?: (targetType: 'region' | 'terrain', targetId: string, edgeIndex: number, x: number, y: number) => void
+  onContinentChange?: (data: Partial<ContinentShape>) => void
+  onContinentDragEnd?: () => void
 }
 
 function MapSVGInner({
@@ -29,15 +37,27 @@ function MapSVGInner({
   mode,
   selectedRegion,
   selectedCity,
+  selectedTerrain,
   onRegionClick,
   onCityClick,
   onTerrainClick,
   onVertexDrag,
+  onTerrainVertexDrag,
+  onCityDrag,
+  onCityDragEnd,
   onDragEnd,
   getMapCoords,
+  onEdgeClick,
+  onContinentChange,
+  onContinentDragEnd,
 }: MapSVGProps) {
   const editable = mode === 'edit'
   const region = selectedRegion ? state.regions.find(r => r.id === selectedRegion) ?? null : null
+  const terrainFeature = selectedTerrain ? state.terrain.find(t => t.id === selectedTerrain) ?? null : null
+
+  const c = state.continent ?? { oceanRadius: 418, landRx: 355, landRy: 348 }
+  const cx = 450
+  const cy = 450
 
   return (
     <svg
@@ -46,16 +66,16 @@ function MapSVGInner({
       xmlns="http://www.w3.org/2000/svg"
       style={{ width: SVG_SIZE, height: SVG_SIZE, overflow: 'visible', display: 'block' }}
     >
-      <MapDefs />
+      <MapDefs oceanRadius={c.oceanRadius} />
 
       {/* Ocean */}
-      <circle cx={450} cy={450} r={450} fill="#060d18" />
-      <circle cx={450} cy={450} r={418} fill="url(#g-ocean)" />
-      <circle cx={450} cy={450} r={418} fill="url(#p-waves)" />
+      <circle cx={cx} cy={cy} r={450} fill="#060d18" />
+      <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#g-ocean)" />
+      <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#p-waves)" />
 
       <g clipPath="url(#clip-map)">
         {/* Land mass */}
-        <ellipse cx={450} cy={450} rx={355} ry={348} fill="url(#g-land)" filter="url(#fx-rough)" />
+        <ellipse cx={cx} cy={cy} rx={c.landRx} ry={c.landRy} fill="url(#g-land)" filter="url(#fx-rough)" />
 
         {/* Regions */}
         <RegionLayer
@@ -68,6 +88,7 @@ function MapSVGInner({
         {/* Terrain */}
         <TerrainLayer
           terrain={state.terrain}
+          selectedId={selectedTerrain}
           onTerrainClick={onTerrainClick}
         />
 
@@ -86,22 +107,39 @@ function MapSVGInner({
         <CityLayer
           cities={state.cities}
           selectedId={selectedCity}
+          editable={editable}
           onCityClick={onCityClick}
+          onCityDrag={onCityDrag}
+          onCityDragEnd={onCityDragEnd}
+          getMapCoords={getMapCoords}
         />
 
         {/* Vertex handles (editor only) */}
-        {editable && onVertexDrag && onDragEnd && getMapCoords && (
+        {editable && onVertexDrag && onTerrainVertexDrag && onDragEnd && getMapCoords && (
           <HandleLayer
             region={region}
+            terrainFeature={terrainFeature}
             onVertexDrag={onVertexDrag}
+            onTerrainVertexDrag={onTerrainVertexDrag}
             onDragEnd={onDragEnd}
             getMapCoords={getMapCoords}
+            onEdgeClick={onEdgeClick}
           />
         )}
 
         {/* Vignette */}
-        <circle cx={450} cy={450} r={418} fill="url(#g-vig)" pointerEvents="none" />
+        <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#g-vig)" pointerEvents="none" />
       </g>
+
+      {/* Continent shape handles (outside clip-path so always visible) */}
+      {editable && getMapCoords && onContinentChange && !selectedRegion && !selectedTerrain && (
+        <ContinentHandles
+          continent={c}
+          getMapCoords={getMapCoords}
+          onChange={onContinentChange}
+          onDragEnd={onContinentDragEnd}
+        />
+      )}
     </svg>
   )
 }

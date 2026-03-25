@@ -3,19 +3,26 @@
 import { useCallback, useRef, useMemo } from 'react'
 import { TransformWrapper, TransformComponent, useControls } from 'react-zoom-pan-pinch'
 import { MapSVG } from './MapSVG'
-import type { MapState, EditorMode } from '@/types/map'
+import type { MapState, EditorMode, ContinentShape } from '@/types/map'
 
 interface MapViewportProps {
   state: MapState
   mode: EditorMode
   selectedRegion: string | null
   selectedCity: string | null
+  selectedTerrain: string | null
   onRegionClick?: (id: string) => void
   onCityClick?: (id: string) => void
   onTerrainClick?: (id: string) => void
   onVertexDrag?: (regionId: string, vertexIndex: number, x: number, y: number) => void
+  onTerrainVertexDrag?: (terrainId: string, vertexIndex: number, x: number, y: number) => void
+  onCityDrag?: (cityId: string, x: number, y: number) => void
+  onCityDragEnd?: () => void
   onDragEnd?: () => void
   onMapClick?: (x: number, y: number) => void
+  onEdgeClick?: (targetType: 'region' | 'terrain', targetId: string, edgeIndex: number, x: number, y: number) => void
+  onContinentChange?: (data: Partial<ContinentShape>) => void
+  onContinentDragEnd?: () => void
   controlsRef?: React.RefObject<MapControlsHandle | null>
 }
 
@@ -41,14 +48,24 @@ export function MapViewport({
   mode,
   selectedRegion,
   selectedCity,
+  selectedTerrain,
   onRegionClick,
   onCityClick,
   onTerrainClick,
   onVertexDrag,
+  onTerrainVertexDrag,
+  onCityDrag,
+  onCityDragEnd,
   onDragEnd,
   onMapClick,
+  onEdgeClick,
+  onContinentChange,
+  onContinentDragEnd,
   controlsRef,
 }: MapViewportProps) {
+  // Track whether a drag just finished so we can suppress the next click
+  const suppressClickRef = useRef(false)
+
   const getMapCoords = useCallback((clientX: number, clientY: number): [number, number] => {
     const svg = document.getElementById('map-svg')
     if (!svg) return [0, 0]
@@ -61,7 +78,30 @@ export function MapViewport({
     ]
   }, [])
 
+  // Wrapped drag end handlers to set suppress flag
+  const wrappedDragEnd = useCallback(() => {
+    suppressClickRef.current = true
+    setTimeout(() => { suppressClickRef.current = false }, 100)
+    onDragEnd?.()
+  }, [onDragEnd])
+
+  const wrappedCityDragEnd = useCallback(() => {
+    suppressClickRef.current = true
+    setTimeout(() => { suppressClickRef.current = false }, 100)
+    onCityDragEnd?.()
+  }, [onCityDragEnd])
+
+  const wrappedContinentDragEnd = useCallback(() => {
+    suppressClickRef.current = true
+    setTimeout(() => { suppressClickRef.current = false }, 100)
+    onContinentDragEnd?.()
+  }, [onContinentDragEnd])
+
   const handleClick = useCallback((e: React.MouseEvent) => {
+    if (suppressClickRef.current) {
+      suppressClickRef.current = false
+      return
+    }
     if (!onMapClick) return
     const target = e.target as Element
     if (target.closest('[data-cid]') || target.closest('[data-rid]') || target.closest('[data-tid]') || target.closest('[data-tower]')) return
@@ -81,16 +121,23 @@ export function MapViewport({
         mode={mode}
         selectedRegion={selectedRegion}
         selectedCity={selectedCity}
+        selectedTerrain={selectedTerrain}
         onRegionClick={onRegionClick}
         onCityClick={onCityClick}
         onTerrainClick={onTerrainClick}
         onVertexDrag={onVertexDrag}
-        onDragEnd={onDragEnd}
+        onTerrainVertexDrag={onTerrainVertexDrag}
+        onCityDrag={onCityDrag}
+        onCityDragEnd={wrappedCityDragEnd}
+        onDragEnd={wrappedDragEnd}
         getMapCoords={getMapCoords}
         onMapClick={onMapClick}
+        onEdgeClick={onEdgeClick}
+        onContinentChange={onContinentChange}
+        onContinentDragEnd={wrappedContinentDragEnd}
       />
     </div>
-  ), [state, mode, selectedRegion, selectedCity, onRegionClick, onCityClick, onTerrainClick, onVertexDrag, onDragEnd, getMapCoords, handleClick, onMapClick])
+  ), [state, mode, selectedRegion, selectedCity, selectedTerrain, onRegionClick, onCityClick, onTerrainClick, onVertexDrag, onTerrainVertexDrag, onCityDrag, wrappedCityDragEnd, wrappedDragEnd, getMapCoords, handleClick, onMapClick, onEdgeClick, onContinentChange, wrappedContinentDragEnd])
 
   return (
     <div
@@ -108,7 +155,7 @@ export function MapViewport({
           excluded: ['handle-drag', 'cursor-move'],
         }}
         doubleClick={{ disabled: true }}
-        wheel={{ smoothStep: 0.08 }}
+        wheel={{ smoothStep: 0.02 }}
       >
         {controlsRef && <ControlsBridge controlsRef={controlsRef} />}
         <TransformComponent

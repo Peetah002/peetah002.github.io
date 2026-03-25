@@ -68,11 +68,18 @@ export interface CityConfig {
   cross?: boolean
 }
 
+export interface ContinentShape {
+  oceanRadius: number      // outer circle radius (default 418)
+  landRx: number           // ellipse rx (default 355)
+  landRy: number           // ellipse ry (default 348)
+}
+
 export interface MapState {
   regions: Region[]
   cities: City[]
   tower: Tower
   terrain: TerrainFeature[]
+  continent: ContinentShape
   version: number
 }
 

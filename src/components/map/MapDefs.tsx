@@ -1,6 +1,10 @@
 'use client'
 
-export function MapDefs() {
+interface MapDefsProps {
+  oceanRadius?: number
+}
+
+export function MapDefs({ oceanRadius = 418 }: MapDefsProps) {
   return (
     <defs>
       <filter id="fx-rough">
@@ -38,7 +42,7 @@ export function MapDefs() {
         <path d="M0,18 Q12,12 25,18 Q38,24 50,18" fill="none" stroke="#2a5a8a" strokeWidth={0.6} opacity={0.18} />
       </pattern>
       <clipPath id="clip-map">
-        <circle cx={450} cy={450} r={418} />
+        <circle cx={450} cy={450} r={oceanRadius} />
       </clipPath>
     </defs>
   )

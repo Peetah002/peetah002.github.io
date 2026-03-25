@@ -17,7 +17,7 @@ export default function PlayerMapPage() {
   const controlsRef = useRef<MapControlsHandle | null>(null)
   const [mounted, setMounted] = useState(false)
 
-  const { regions, cities, tower, terrain, version, importMap } = useMapStore()
+  const { regions, cities, tower, terrain, continent, version, importMap } = useMapStore()
   const { selectedCity, selectCity, legendCollapsed, toggleLegend } = useUIStore()
 
   useEffect(() => { setMounted(true) }, [])
@@ -72,7 +72,7 @@ export default function PlayerMapPage() {
     </div>
   }
 
-  const state = { regions, cities, tower, terrain, version }
+  const state = { regions, cities, tower, terrain, continent: continent ?? { oceanRadius: 418, landRx: 355, landRy: 348 }, version }
 
   return (
     <div className="h-screen overflow-hidden">
@@ -102,6 +102,7 @@ export default function PlayerMapPage() {
         mode="view"
         selectedRegion={null}
         selectedCity={selectedCity}
+        selectedTerrain={null}
         onCityClick={handleCityClick}
         controlsRef={controlsRef}
       />

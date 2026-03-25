@@ -38,6 +38,7 @@ export default function EditorPage() {
     updateCity, addCity, removeCity,
     setTower,
     addTerrain, updateTerrain, removeTerrain,
+    updateContinent,
     resetMap, exportMap,
   } = store
 
@@ -45,6 +46,7 @@ export default function EditorPage() {
     mode, setMode,
     selectedRegion, selectRegion,
     selectedCity, selectCity,
+    selectedTerrain, selectTerrain,
     panelOpen, panelContent, openPanel, closePanel,
     legendCollapsed, toggleLegend,
     newCityCoords, setNewCityCoords,
@@ -52,11 +54,12 @@ export default function EditorPage() {
 
   const region = selectedRegion ? regions.find(r => r.id === selectedRegion) ?? null : null
   const city = selectedCity ? cities.find(c => c.id === selectedCity) ?? null : null
+  const terrainFeature = selectedTerrain ? terrain.find(t => t.id === selectedTerrain) ?? null : null
 
   // Mode buttons
   const modes: { id: EditorMode; label: string; icon: typeof Eye }[] = [
     { id: 'view', label: 'Vista', icon: Eye },
-    { id: 'edit', label: 'Regioni', icon: Layers },
+    { id: 'edit', label: 'Modifica', icon: Layers },
     { id: 'addcity', label: '+Città', icon: MapPin },
     { id: 'addterrain', label: '+Terreno', icon: Mountain },
   ]
@@ -81,6 +84,13 @@ export default function EditorPage() {
     openPanel(mode === 'view' ? 'city-info' : 'city-edit')
   }, [selectCity, openPanel, mode])
 
+  const handleTerrainClick = useCallback((id: string) => {
+    if (mode === 'edit') {
+      selectTerrain(id)
+      openPanel('terrain-edit')
+    }
+  }, [mode, selectTerrain, openPanel])
+
   const handleMapClick = useCallback((x: number, y: number) => {
     if (mode === 'addcity') {
       setNewCityCoords({ x, y })
@@ -88,8 +98,9 @@ export default function EditorPage() {
     }
     if (mode === 'edit' && !panelOpen) {
       selectRegion(null)
+      selectTerrain(null)
     }
-  }, [mode, panelOpen, setNewCityCoords, openPanel, selectRegion])
+  }, [mode, panelOpen, setNewCityCoords, openPanel, selectRegion, selectTerrain])
 
   const handleVertexDrag = useCallback((regionId: string, vertexIndex: number, x: number, y: number) => {
     const r = regions.find(rr => rr.id === regionId)
@@ -98,20 +109,41 @@ export default function EditorPage() {
     updateRegion(regionId, { pts: newPts })
   }, [regions, updateRegion])
 
-  const handleDragEnd = useCallback(() => {
+  const handleTerrainVertexDrag = useCallback((terrainId: string, vertexIndex: number, x: number, y: number) => {
+    const t = terrain.find(tt => tt.id === terrainId)
+    if (!t) return
+    const newPts = t.points.map((p, i) => i === vertexIndex ? [x, y] as [number, number] : p)
+    updateTerrain(terrainId, { points: newPts })
+  }, [terrain, updateTerrain])
+
+  const handleEdgeClick = useCallback((targetType: 'region' | 'terrain', targetId: string, edgeIndex: number, x: number, y: number) => {
+    if (targetType === 'region') {
+      const r = regions.find(rr => rr.id === targetId)
+      if (!r) return
+      const newPts = [...r.pts]
+      newPts.splice(edgeIndex + 1, 0, [x, y] as [number, number])
+      updateRegion(targetId, { pts: newPts })
+      toast.success('Vertice inserito')
+    } else {
+      const t = terrain.find(tt => tt.id === targetId)
+      if (!t) return
+      const newPts = [...t.points]
+      newPts.splice(edgeIndex + 1, 0, [x, y] as [number, number])
+      updateTerrain(targetId, { points: newPts })
+      toast.success('Vertice inserito')
+    }
+  }, [regions, terrain, updateRegion, updateTerrain])
+
+  const handleCityDrag = useCallback((cityId: string, x: number, y: number) => {
+    updateCity(cityId, { x, y })
+  }, [updateCity])
+
+  const handleCityDragEnd = useCallback(() => {
     // State already persisted via zustand persist
   }, [])
 
-  const getMapCoords = useCallback((clientX: number, clientY: number): [number, number] => {
-    const svg = document.getElementById('map-svg')
-    if (!svg) return [0, 0]
-    const rect = svg.getBoundingClientRect()
-    const scaleX = 900 / rect.width
-    const scaleY = 900 / rect.height
-    return [
-      (clientX - rect.left) * scaleX,
-      (clientY - rect.top) * scaleY,
-    ]
+  const handleDragEnd = useCallback(() => {
+    // State already persisted via zustand persist
   }, [])
 
   const handleAddRegion = useCallback(() => {
@@ -153,6 +185,41 @@ export default function EditorPage() {
     toast.success('Vertice rimosso')
   }, [region, updateRegion])
 
+  const handleAddTerrainVertex = useCallback(() => {
+    if (!terrainFeature) return
+    const pts = terrainFeature.points
+    const isRiver = terrainFeature.type === 'river'
+    if (isRiver) {
+      // For rivers, add a point at the end extending the last segment
+      const last = pts[pts.length - 1]
+      const prev = pts[pts.length - 2] || last
+      const dx = last[0] - prev[0]
+      const dy = last[1] - prev[1]
+      const newPts = [...pts, [Math.round(last[0] + dx * 0.5), Math.round(last[1] + dy * 0.5)] as [number, number]]
+      updateTerrain(terrainFeature.id, { points: newPts })
+    } else {
+      const best = longestEdgeIndex(pts)
+      const a = pts[best]
+      const b = pts[(best + 1) % pts.length]
+      const newPts = [...pts]
+      newPts.splice(best + 1, 0, [Math.round((a[0] + b[0]) / 2), Math.round((a[1] + b[1]) / 2)])
+      updateTerrain(terrainFeature.id, { points: newPts })
+    }
+    toast.success('Vertice aggiunto')
+  }, [terrainFeature, updateTerrain])
+
+  const handleRemoveTerrainVertex = useCallback(() => {
+    if (!terrainFeature) return
+    const minPts = terrainFeature.type === 'river' ? 2 : 3
+    if (terrainFeature.points.length <= minPts) {
+      toast.error(`Minimo ${minPts} vertici`)
+      return
+    }
+    const newPts = terrainFeature.points.slice(0, -1)
+    updateTerrain(terrainFeature.id, { points: newPts })
+    toast.success('Vertice rimosso')
+  }, [terrainFeature, updateTerrain])
+
   const handleExport = useCallback(() => {
     const data = exportMap()
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -178,7 +245,8 @@ export default function EditorPage() {
     </div>
   }
 
-  const state = { regions, cities, tower, terrain, version }
+  const continent = store.continent ?? { oceanRadius: 418, landRx: 355, landRy: 348 }
+  const state = { regions, cities, tower, terrain, continent, version }
   const controlsVisible = !panelOpen
 
   return (
@@ -236,11 +304,19 @@ export default function EditorPage() {
         mode={mode}
         selectedRegion={selectedRegion}
         selectedCity={selectedCity}
+        selectedTerrain={selectedTerrain}
         onRegionClick={handleRegionClick}
         onCityClick={handleCityClick}
+        onTerrainClick={handleTerrainClick}
         onVertexDrag={handleVertexDrag}
+        onTerrainVertexDrag={handleTerrainVertexDrag}
+        onCityDrag={handleCityDrag}
+        onCityDragEnd={handleCityDragEnd}
         onDragEnd={handleDragEnd}
         onMapClick={handleMapClick}
+        onEdgeClick={handleEdgeClick}
+        onContinentChange={updateContinent}
+        onContinentDragEnd={handleDragEnd}
         controlsRef={controlsRef}
       />
 
@@ -251,7 +327,7 @@ export default function EditorPage() {
       {/* Mode badge */}
       <div className="fixed bottom-4 right-3 z-20 bg-ink/94 border border-border rounded-full px-3 py-1.5 font-heading text-[9px] text-muted-foreground tracking-wider pointer-events-none">
         {mode === 'view' && 'VISTA'}
-        {mode === 'edit' && 'MODIFICA REGIONI'}
+        {mode === 'edit' && 'MODIFICA'}
         {mode === 'addcity' && 'PIAZZA CITTÀ'}
         {mode === 'addterrain' && 'AGGIUNGI TERRENO'}
       </div>
@@ -330,6 +406,25 @@ export default function EditorPage() {
             addTerrain(data)
             setMode('edit')
           }}
+        />
+      )}
+
+      {/* Terrain editor (edit existing) */}
+      {panelContent === 'terrain-edit' && terrainFeature && (
+        <TerrainEditor
+          key={terrainFeature.id}
+          feature={terrainFeature}
+          open={panelOpen}
+          onClose={closePanel}
+          onSave={(data) => {
+            updateTerrain(terrainFeature.id, data)
+          }}
+          onDelete={() => {
+            removeTerrain(terrainFeature.id)
+            selectTerrain(null)
+          }}
+          onAddVertex={handleAddTerrainVertex}
+          onRemoveVertex={handleRemoveTerrainVertex}
         />
       )}
 

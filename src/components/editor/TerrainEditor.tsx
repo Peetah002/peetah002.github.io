@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
-import { Save, Trash2, Plus, Minus } from 'lucide-react'
+import { Save, Trash2, Plus, Minus, Info } from 'lucide-react'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 
@@ -20,6 +20,8 @@ interface TerrainEditorProps {
   onClose: () => void
   onSave: (data: TerrainFeature) => void
   onDelete?: () => void
+  onAddVertex?: () => void
+  onRemoveVertex?: () => void
 }
 
 export function TerrainEditor({
@@ -29,6 +31,8 @@ export function TerrainEditor({
   onClose,
   onSave,
   onDelete,
+  onAddVertex,
+  onRemoveVertex,
 }: TerrainEditorProps) {
   const [type, setType] = useState<TerrainType>(feature?.type ?? 'forest')
   const [label, setLabel] = useState(feature?.label ?? '')
@@ -110,9 +114,39 @@ export function TerrainEditor({
             </div>
 
             {!isNew && feature && (
-              <p className="text-[10px] text-muted-foreground text-center">
-                {feature.points.length} punti — Passa a modalità Modifica Regioni per trascinare i vertici
-              </p>
+              <>
+                {/* Vertex hint */}
+                <div className="flex items-start gap-2 p-3 rounded-lg bg-secondary/50 border border-border/50">
+                  <Info size={14} className="text-gold-dim mt-0.5 flex-shrink-0" />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    {feature.points.length} vertici — Trascina i vertici dorati per modificare la forma.
+                    Clicca su un lato per aggiungere un vertice in quel punto.
+                  </p>
+                </div>
+
+                {onAddVertex && onRemoveVertex && (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onAddVertex}
+                      className="border-gold-dim/50 text-gold hover:bg-accent"
+                    >
+                      <Plus size={14} className="mr-1" />
+                      Vertice
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={onRemoveVertex}
+                      className="border-destructive/50 text-destructive hover:bg-destructive/10"
+                    >
+                      <Minus size={14} className="mr-1" />
+                      Vertice
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Actions */}

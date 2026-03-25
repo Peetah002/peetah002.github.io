@@ -7,6 +7,7 @@ interface UIStore {
   mode: EditorMode
   selectedRegion: string | null
   selectedCity: string | null
+  selectedTerrain: string | null
   panelOpen: boolean
   panelContent: 'region-edit' | 'city-edit' | 'city-new' | 'city-info' | 'terrain-new' | 'terrain-edit' | null
   legendCollapsed: boolean
@@ -15,6 +16,7 @@ interface UIStore {
   setMode: (mode: EditorMode) => void
   selectRegion: (id: string | null) => void
   selectCity: (id: string | null) => void
+  selectTerrain: (id: string | null) => void
   openPanel: (content: UIStore['panelContent']) => void
   closePanel: () => void
   toggleLegend: () => void
@@ -26,6 +28,7 @@ export const useUIStore = create<UIStore>((set) => ({
   mode: 'view',
   selectedRegion: null,
   selectedCity: null,
+  selectedTerrain: null,
   panelOpen: false,
   panelContent: null,
   legendCollapsed: false,
@@ -35,12 +38,14 @@ export const useUIStore = create<UIStore>((set) => ({
     mode,
     selectedRegion: null,
     selectedCity: null,
+    selectedTerrain: null,
     panelOpen: false,
     panelContent: null,
   }),
 
-  selectRegion: (id) => set({ selectedRegion: id, selectedCity: null }),
-  selectCity: (id) => set({ selectedCity: id, selectedRegion: null }),
+  selectRegion: (id) => set({ selectedRegion: id, selectedCity: null, selectedTerrain: null }),
+  selectCity: (id) => set({ selectedCity: id, selectedRegion: null, selectedTerrain: null }),
+  selectTerrain: (id) => set({ selectedTerrain: id, selectedRegion: null, selectedCity: null }),
 
   openPanel: (content) => set({ panelOpen: true, panelContent: content }),
   closePanel: () => set({ panelOpen: false, panelContent: null, newCityCoords: null }),
@@ -53,6 +58,7 @@ export const useUIStore = create<UIStore>((set) => ({
     mode: 'view',
     selectedRegion: null,
     selectedCity: null,
+    selectedTerrain: null,
     panelOpen: false,
     panelContent: null,
   }),
