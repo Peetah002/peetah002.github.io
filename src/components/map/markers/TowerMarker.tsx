@@ -5,10 +5,9 @@ import { memo } from 'react'
 interface TowerMarkerProps {
   x: number
   y: number
-  editable?: boolean
 }
 
-function TowerMarkerInner({ x, y, editable }: TowerMarkerProps) {
+function TowerMarkerInner({ x, y }: TowerMarkerProps) {
   const bx = x - 9
   const by = y - 30
 
@@ -32,39 +31,18 @@ function TowerMarkerInner({ x, y, editable }: TowerMarkerProps) {
       <polygon points={`${x},${by - 24} ${x + 13},${by - 18} ${x},${by - 12}`} fill="#a02818" />
 
       {/* Labels */}
-      <text
-        x={x} y={y + 42}
+      <text x={x} y={y + 42}
         fontFamily="var(--font-cinzel), Cinzel, serif"
-        fontSize={10} fontWeight={600}
-        fill="#d4a830" textAnchor="middle"
-        opacity={0.85} letterSpacing={1}
-        pointerEvents="none"
-      >
+        fontSize={10} fontWeight={600} fill="#d4a830" textAnchor="middle"
+        opacity={0.85} letterSpacing={1} pointerEvents="none">
         Torre di Nartharion
       </text>
-      <text
-        x={x} y={y + 53}
+      <text x={x} y={y + 53}
         fontFamily="var(--font-body), IM Fell English, serif"
-        fontSize={8} fontStyle="italic"
-        fill="#a07820" textAnchor="middle"
-        opacity={0.7} pointerEvents="none"
-      >
+        fontSize={8} fontStyle="italic" fill="#a07820" textAnchor="middle"
+        opacity={0.7} pointerEvents="none">
         HQ DOOM-E
       </text>
-
-      {/* Edit mode: drag target */}
-      {editable && (
-        <circle
-          cx={x} cy={y} r={34}
-          fill="transparent"
-          stroke="#d4a830"
-          strokeWidth={1.5}
-          strokeDasharray="4,4"
-          opacity={0.5}
-          className="cursor-move"
-          data-tower="1"
-        />
-      )}
     </g>
   )
 }

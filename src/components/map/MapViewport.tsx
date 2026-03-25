@@ -21,6 +21,8 @@ interface MapViewportProps {
   onContinentVertexDrag?: (targetId: string, vertexIndex: number, x: number, y: number) => void
   onCityDrag?: (cityId: string, x: number, y: number) => void
   onCityDragEnd?: () => void
+  onTowerDrag?: (x: number, y: number) => void
+  onTowerDragEnd?: () => void
   onDragEnd?: () => void
   onMapClick?: (x: number, y: number) => void
   onEdgeClick?: (targetType: 'region' | 'terrain' | 'continent', targetId: string, edgeIndex: number, x: number, y: number) => void
@@ -59,6 +61,8 @@ export function MapViewport({
   onContinentVertexDrag,
   onCityDrag,
   onCityDragEnd,
+  onTowerDrag,
+  onTowerDragEnd,
   onDragEnd,
   onMapClick,
   onEdgeClick,
@@ -89,6 +93,12 @@ export function MapViewport({
     setTimeout(() => { suppressClickRef.current = false }, 100)
     onCityDragEnd?.()
   }, [onCityDragEnd])
+
+  const wrappedTowerDragEnd = useCallback(() => {
+    suppressClickRef.current = true
+    setTimeout(() => { suppressClickRef.current = false }, 100)
+    onTowerDragEnd?.()
+  }, [onTowerDragEnd])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     if (suppressClickRef.current) {
@@ -124,6 +134,8 @@ export function MapViewport({
         onContinentVertexDrag={onContinentVertexDrag}
         onCityDrag={onCityDrag}
         onCityDragEnd={wrappedCityDragEnd}
+        onTowerDrag={onTowerDrag}
+        onTowerDragEnd={wrappedTowerDragEnd}
         onDragEnd={wrappedDragEnd}
         getMapCoords={getMapCoords}
         onMapClick={onMapClick}
@@ -133,7 +145,7 @@ export function MapViewport({
   ), [state, mode, selectedRegion, selectedCity, selectedTerrain, selectedContinent,
     onRegionClick, onCityClick, onTerrainClick, onContinentClick,
     onVertexDrag, onTerrainVertexDrag, onContinentVertexDrag,
-    onCityDrag, wrappedCityDragEnd, wrappedDragEnd,
+    onCityDrag, wrappedCityDragEnd, onTowerDrag, wrappedTowerDragEnd, wrappedDragEnd,
     getMapCoords, handleClick, onMapClick, onEdgeClick])
 
   return (

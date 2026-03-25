@@ -175,6 +175,11 @@ export default function EditorPage() {
     updateCity(cityId, { x, y })
   }, [updateCity])
 
+  // --- Tower drag ---
+  const handleTowerDrag = useCallback((x: number, y: number) => {
+    store.setTower({ x, y })
+  }, [store])
+
   const handleDragEnd = useCallback(() => {}, [])
 
   // --- Region vertex buttons ---
@@ -370,6 +375,8 @@ export default function EditorPage() {
         onContinentVertexDrag={handleContinentVertexDrag}
         onCityDrag={handleCityDrag}
         onCityDragEnd={handleDragEnd}
+        onTowerDrag={handleTowerDrag}
+        onTowerDragEnd={handleDragEnd}
         onDragEnd={handleDragEnd}
         onMapClick={handleMapClick}
         onEdgeClick={handleEdgeClick}

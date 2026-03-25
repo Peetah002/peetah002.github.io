@@ -27,6 +27,8 @@ interface MapSVGProps {
   onContinentVertexDrag?: (targetId: string, vertexIndex: number, x: number, y: number) => void
   onCityDrag?: (cityId: string, x: number, y: number) => void
   onCityDragEnd?: () => void
+  onTowerDrag?: (x: number, y: number) => void
+  onTowerDragEnd?: () => void
   onDragEnd?: () => void
   getMapCoords?: (clientX: number, clientY: number) => [number, number]
   onMapClick?: (x: number, y: number) => void
@@ -49,6 +51,8 @@ function MapSVGInner({
   onContinentVertexDrag,
   onCityDrag,
   onCityDragEnd,
+  onTowerDrag,
+  onTowerDragEnd,
   onDragEnd,
   getMapCoords,
   onEdgeClick,
@@ -175,7 +179,8 @@ function MapSVGInner({
         </g>
 
         {/* Tower */}
-        <TowerLayer tower={state.tower} editable={editable} />
+        <TowerLayer tower={state.tower} editable={editable}
+          onTowerDrag={onTowerDrag} onTowerDragEnd={onTowerDragEnd} getMapCoords={getMapCoords} />
 
         {/* Cities */}
         <CityLayer
