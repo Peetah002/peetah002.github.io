@@ -47,6 +47,25 @@ export function ellipsePolygon(cx: number, cy: number, rx: number, ry: number, n
   return pts
 }
 
+/** Compute average distance from centroid (effective radius) */
+export function polygonRadius(pts: [number, number][]): number {
+  const [cx, cy] = centroid(pts)
+  const sum = pts.reduce((s, p) => s + Math.hypot(p[0] - cx, p[1] - cy), 0)
+  return sum / pts.length
+}
+
+/** Scale polygon uniformly around its centroid to match a target radius */
+export function scalePolygonToRadius(pts: [number, number][], targetRadius: number): [number, number][] {
+  const [cx, cy] = centroid(pts)
+  const currentRadius = polygonRadius(pts)
+  if (currentRadius < 1) return pts
+  const factor = targetRadius / currentRadius
+  return pts.map(([x, y]) => [
+    Math.round(cx + (x - cx) * factor),
+    Math.round(cy + (y - cy) * factor),
+  ])
+}
+
 export function longestEdgeIndex(pts: [number, number][]): number {
   let best = 0
   let bestLen = 0

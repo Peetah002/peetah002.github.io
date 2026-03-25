@@ -1,17 +1,20 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Slider } from '@/components/ui/slider'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Plus, Minus, Save, Trash2, Info } from 'lucide-react'
 import { toast } from 'sonner'
+import { polygonRadius } from '@/lib/geometry'
 
 interface LandMassEditorProps {
   isOcean: boolean
   name: string
+  pts: [number, number][]
   vertexCount: number
   open: boolean
   onClose: () => void
@@ -19,11 +22,13 @@ interface LandMassEditorProps {
   onDelete?: () => void
   onAddVertex: () => void
   onRemoveVertex: () => void
+  onResize: (targetRadius: number) => void
 }
 
 export function LandMassEditor({
   isOcean,
   name: initialName,
+  pts,
   vertexCount,
   open,
   onClose,
@@ -31,9 +36,35 @@ export function LandMassEditor({
   onDelete,
   onAddVertex,
   onRemoveVertex,
+  onResize,
 }: LandMassEditorProps) {
   const [name, setName] = useState(initialName)
   const [confirmDelete, setConfirmDelete] = useState(false)
+
+  const currentRadius = Math.round(polygonRadius(pts))
+  const [radiusInput, setRadiusInput] = useState(String(currentRadius))
+  const [sliderValue, setSliderValue] = useState(currentRadius)
+
+  // Sync when pts change externally (e.g. vertex drag)
+  useEffect(() => {
+    const r = Math.round(polygonRadius(pts))
+    setSliderValue(r)
+    setRadiusInput(String(r))
+  }, [pts])
+
+  const handleSliderChange = (v: number | number[]) => {
+    const r = Array.isArray(v) ? v[0] ?? sliderValue : v
+    setSliderValue(r)
+    setRadiusInput(String(r))
+    onResize(r)
+  }
+
+  const handleRadiusSubmit = () => {
+    const r = Math.max(10, Math.min(900, parseInt(radiusInput) || currentRadius))
+    setSliderValue(r)
+    setRadiusInput(String(r))
+    onResize(r)
+  }
 
   return (
     <>
@@ -68,6 +99,34 @@ export function LandMassEditor({
                 </div>
               </div>
             )}
+
+            {/* Uniform resize */}
+            <div className="space-y-1.5">
+              <Label className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">
+                Dimensione (raggio): {sliderValue}
+              </Label>
+              <Slider
+                value={[sliderValue]}
+                onValueChange={handleSliderChange}
+                min={10}
+                max={600}
+                step={1}
+                className="py-2"
+              />
+              <div className="flex gap-2 items-center">
+                <Input
+                  type="number"
+                  value={radiusInput}
+                  onChange={(e) => setRadiusInput(e.target.value)}
+                  onBlur={handleRadiusSubmit}
+                  onKeyDown={(e) => e.key === 'Enter' && handleRadiusSubmit()}
+                  min={10}
+                  max={900}
+                  className="bg-secondary border-border text-foreground w-24 text-center"
+                />
+                <span className="text-[10px] text-muted-foreground">px (raggio equivalente)</span>
+              </div>
+            </div>
 
             <div className="flex items-start gap-2 p-3 rounded-lg bg-secondary/50 border border-border/50">
               <Info size={14} className="text-gold-dim mt-0.5 flex-shrink-0" />

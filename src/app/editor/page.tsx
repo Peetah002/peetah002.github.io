@@ -12,7 +12,7 @@ import { TerrainEditor } from '@/components/editor/TerrainEditor'
 import { LandMassEditor } from '@/components/editor/LandMassEditor'
 import { useMapStore } from '@/stores/mapStore'
 import { useUIStore } from '@/stores/uiStore'
-import { longestEdgeIndex, ellipsePolygon } from '@/lib/geometry'
+import { longestEdgeIndex, ellipsePolygon, scalePolygonToRadius } from '@/lib/geometry'
 import type { EditorMode } from '@/types/map'
 import { DEF_CONTINENT } from '@/lib/mapData'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
@@ -247,6 +247,17 @@ export default function EditorPage() {
     toast.success('Vertice rimosso')
   }, [selectedContinent, selectedLandMass, continent.oceanBorder, updateOceanBorder, updateLandMass])
 
+  // --- Continent uniform resize ---
+  const handleContinentResize = useCallback((targetRadius: number) => {
+    if (selectedContinent === 'ocean') {
+      const newPts = scalePolygonToRadius(continent.oceanBorder, targetRadius)
+      updateOceanBorder(newPts)
+    } else if (selectedLandMass) {
+      const newPts = scalePolygonToRadius(selectedLandMass.pts, targetRadius)
+      updateLandMass(selectedLandMass.id, { pts: newPts })
+    }
+  }, [selectedContinent, selectedLandMass, continent.oceanBorder, updateOceanBorder, updateLandMass])
+
   // --- Add region / land mass ---
   const handleAddRegion = useCallback(() => {
     const id = `reg_${Date.now()}`
@@ -426,6 +437,7 @@ export default function EditorPage() {
           key={selectedContinent}
           isOcean={selectedContinent === 'ocean'}
           name={selectedContinent === 'ocean' ? 'Bordo Oceano' : selectedLandMass?.name ?? ''}
+          pts={selectedContinent === 'ocean' ? continent.oceanBorder : selectedLandMass?.pts ?? []}
           vertexCount={selectedContinent === 'ocean' ? continent.oceanBorder.length : selectedLandMass?.pts.length ?? 0}
           open={panelOpen}
           onClose={closePanel}
@@ -433,6 +445,7 @@ export default function EditorPage() {
           onDelete={selectedContinent !== 'ocean' && selectedLandMass ? () => { removeLandMass(selectedLandMass.id); selectContinent(null) } : undefined}
           onAddVertex={handleAddContinentVertex}
           onRemoveVertex={handleRemoveContinentVertex}
+          onResize={handleContinentResize}
         />
       )}
 
