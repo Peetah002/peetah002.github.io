@@ -71,11 +71,13 @@ export interface CityConfig {
 export interface LandMass {
   id: string
   name: string
+  label?: string
   pts: [number, number][]
 }
 
 export interface ContinentShape {
   oceanBorder: [number, number][]
+  oceanLabel?: string
   landMasses: LandMass[]
 }
 

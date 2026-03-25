@@ -89,6 +89,20 @@ function MapSVGInner({
       <polygon points={ptsStr(oceanBorder)} fill="url(#g-ocean)" />
       <polygon points={ptsStr(oceanBorder)} fill="url(#p-waves)" />
 
+      {/* Ocean label */}
+      {c.oceanLabel && (
+        <text
+          x={oceanBorder.reduce((s, p) => s + p[0], 0) / oceanBorder.length}
+          y={oceanBorder.reduce((s, p) => s + p[1], 0) / oceanBorder.length}
+          fontFamily="var(--font-body), IM Fell English, serif"
+          fontSize={14} fontStyle="italic"
+          fill="#3a6a9a" textAnchor="middle" opacity={0.4}
+          pointerEvents="none"
+        >
+          {c.oceanLabel}
+        </text>
+      )}
+
       {/* Ocean border clickable in edit mode */}
       {editable && onContinentClick && (
         <polygon
@@ -141,12 +155,23 @@ function MapSVGInner({
           onTerrainClick={onTerrainClick}
         />
 
-        {/* Static decorations - ocean labels */}
+        {/* Land mass labels */}
         <g pointerEvents="none">
-          <text x={95} y={445} fontFamily="var(--font-body), IM Fell English, serif" fontSize={13} fontStyle="italic" fill="#3a6a9a" textAnchor="middle" opacity={0.35} transform="rotate(-10,95,445)">Mare</text>
-          <text x={95} y={460} fontFamily="var(--font-body), IM Fell English, serif" fontSize={13} fontStyle="italic" fill="#3a6a9a" textAnchor="middle" opacity={0.35} transform="rotate(-10,95,460)">Occidentale</text>
-          <text x={808} y={430} fontFamily="var(--font-body), IM Fell English, serif" fontSize={12} fontStyle="italic" fill="#3a6a9a" textAnchor="middle" opacity={0.32} transform="rotate(8,808,430)">Mare</text>
-          <text x={808} y={444} fontFamily="var(--font-body), IM Fell English, serif" fontSize={12} fontStyle="italic" fill="#3a6a9a" textAnchor="middle" opacity={0.32} transform="rotate(8,808,444)">Orientale</text>
+          {landMasses.map(lm => {
+            if (!lm.label) return null
+            const cx = lm.pts.reduce((s, p) => s + p[0], 0) / lm.pts.length
+            const cy = lm.pts.reduce((s, p) => s + p[1], 0) / lm.pts.length
+            return (
+              <text key={`lbl-${lm.id}`} x={cx} y={cy}
+                fontFamily="var(--font-cinzel), Cinzel, serif"
+                fontSize={12} fontWeight={700} fontStyle="italic"
+                fill="#2a2010" textAnchor="middle" opacity={0.5}
+                letterSpacing={1.5}
+              >
+                {lm.label}
+              </text>
+            )
+          })}
         </g>
 
         {/* Tower */}

@@ -26,6 +26,7 @@ interface MapStore extends MapState {
 
   // Continent shape
   updateOceanBorder: (pts: [number, number][]) => void
+  updateOceanLabel: (label: string) => void
   addLandMass: (lm: LandMass) => void
   updateLandMass: (id: string, data: Partial<LandMass>) => void
   removeLandMass: (id: string) => void
@@ -86,6 +87,9 @@ export const useMapStore = create<MapStore>()(
       // Continent
       updateOceanBorder: (pts) => set(s => ({
         continent: { ...s.continent, oceanBorder: pts },
+      })),
+      updateOceanLabel: (label) => set(s => ({
+        continent: { ...s.continent, oceanLabel: label || undefined },
       })),
       addLandMass: (lm) => set(s => ({
         continent: { ...s.continent, landMasses: [...s.continent.landMasses, lm] },

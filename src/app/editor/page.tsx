@@ -39,7 +39,7 @@ export default function EditorPage() {
     updateRegion, addRegion, removeRegion,
     updateCity, addCity, removeCity,
     addTerrain, updateTerrain, removeTerrain,
-    updateOceanBorder, addLandMass, updateLandMass, removeLandMass,
+    updateOceanBorder, updateOceanLabel, addLandMass, updateLandMass, removeLandMass,
     resetMap, exportMap,
   } = store
 
@@ -437,11 +437,16 @@ export default function EditorPage() {
           key={selectedContinent}
           isOcean={selectedContinent === 'ocean'}
           name={selectedContinent === 'ocean' ? 'Bordo Oceano' : selectedLandMass?.name ?? ''}
+          label={selectedContinent === 'ocean' ? (continent.oceanLabel ?? '') : (selectedLandMass?.label ?? '')}
           pts={selectedContinent === 'ocean' ? continent.oceanBorder : selectedLandMass?.pts ?? []}
           vertexCount={selectedContinent === 'ocean' ? continent.oceanBorder.length : selectedLandMass?.pts.length ?? 0}
           open={panelOpen}
           onClose={closePanel}
           onSaveName={selectedContinent !== 'ocean' && selectedLandMass ? (name) => updateLandMass(selectedLandMass.id, { name }) : undefined}
+          onSaveLabel={selectedContinent === 'ocean'
+            ? (lbl) => updateOceanLabel(lbl)
+            : selectedLandMass ? (lbl) => updateLandMass(selectedLandMass.id, { label: lbl || undefined }) : () => {}
+          }
           onDelete={selectedContinent !== 'ocean' && selectedLandMass ? () => { removeLandMass(selectedLandMass.id); selectContinent(null) } : undefined}
           onAddVertex={handleAddContinentVertex}
           onRemoveVertex={handleRemoveContinentVertex}

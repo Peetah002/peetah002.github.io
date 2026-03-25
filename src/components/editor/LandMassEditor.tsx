@@ -14,11 +14,13 @@ import { polygonRadius } from '@/lib/geometry'
 interface LandMassEditorProps {
   isOcean: boolean
   name: string
+  label: string
   pts: [number, number][]
   vertexCount: number
   open: boolean
   onClose: () => void
   onSaveName?: (name: string) => void
+  onSaveLabel: (label: string) => void
   onDelete?: () => void
   onAddVertex: () => void
   onRemoveVertex: () => void
@@ -28,24 +30,26 @@ interface LandMassEditorProps {
 export function LandMassEditor({
   isOcean,
   name: initialName,
+  label: initialLabel,
   pts,
   vertexCount,
   open,
   onClose,
   onSaveName,
+  onSaveLabel,
   onDelete,
   onAddVertex,
   onRemoveVertex,
   onResize,
 }: LandMassEditorProps) {
   const [name, setName] = useState(initialName)
+  const [label, setLabel] = useState(initialLabel)
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   const currentRadius = Math.round(polygonRadius(pts))
   const [radiusInput, setRadiusInput] = useState(String(currentRadius))
   const [sliderValue, setSliderValue] = useState(currentRadius)
 
-  // Sync when pts change externally (e.g. vertex drag)
   useEffect(() => {
     const r = Math.round(polygonRadius(pts))
     setSliderValue(r)
@@ -80,6 +84,7 @@ export function LandMassEditor({
           </SheetHeader>
 
           <div className="space-y-4 pt-4">
+            {/* Name (land mass only) */}
             {!isOcean && onSaveName && (
               <div className="space-y-1.5">
                 <Label className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">Nome</Label>
@@ -99,6 +104,27 @@ export function LandMassEditor({
                 </div>
               </div>
             )}
+
+            {/* Label (visible on map) */}
+            <div className="space-y-1.5">
+              <Label className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">
+                Etichetta sulla mappa
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  value={label}
+                  onChange={(e) => setLabel(e.target.value)}
+                  placeholder={isOcean ? 'es. Oceano' : 'es. Arcipelago'}
+                  className="bg-secondary border-border text-foreground flex-1"
+                />
+                <Button
+                  onClick={() => { onSaveLabel(label.trim()); toast.success(label.trim() ? 'Etichetta salvata' : 'Etichetta rimossa') }}
+                  className="bg-accent border border-gold-dark text-gold hover:bg-gold-dim/30 font-heading text-xs px-3"
+                >
+                  <Save size={14} />
+                </Button>
+              </div>
+            </div>
 
             {/* Uniform resize */}
             <div className="space-y-1.5">
