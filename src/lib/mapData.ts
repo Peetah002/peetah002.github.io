@@ -1,4 +1,5 @@
-import type { Region, City, Tower, TerrainFeature } from '@/types/map'
+import type { Region, City, Tower, TerrainFeature, ContinentShape } from '@/types/map'
+import { ellipsePolygon } from './geometry'
 
 export const DEF_REGIONS: Region[] = [
   { id: 'aldheris', name: 'Aldheris', sub: 'Impero Teocratico', color: '#b8d090', stroke: '#7a9050', op: 0.88,
@@ -55,3 +56,10 @@ export const DEF_CITIES: City[] = [
 export const DEF_TOWER: Tower = { x: 450, y: 440 }
 
 export const DEF_TERRAIN: TerrainFeature[] = []
+
+export const DEF_CONTINENT: ContinentShape = {
+  oceanBorder: ellipsePolygon(450, 450, 418, 418, 32),
+  landMasses: [
+    { id: 'main', name: 'Continente Principale', pts: ellipsePolygon(450, 450, 355, 348, 32) },
+  ],
+}

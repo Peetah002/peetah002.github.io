@@ -37,6 +37,16 @@ export function pointInPolygon(x: number, y: number, pts: [number, number][]): b
   return inside
 }
 
+/** Generate polygon points approximating an ellipse (or circle if rx===ry) */
+export function ellipsePolygon(cx: number, cy: number, rx: number, ry: number, n = 32): [number, number][] {
+  const pts: [number, number][] = []
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2
+    pts.push([Math.round(cx + rx * Math.cos(a)), Math.round(cy + ry * Math.sin(a))])
+  }
+  return pts
+}
+
 export function longestEdgeIndex(pts: [number, number][]): number {
   let best = 0
   let bestLen = 0

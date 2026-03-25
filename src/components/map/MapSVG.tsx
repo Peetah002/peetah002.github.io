@@ -2,14 +2,14 @@
 
 import { memo } from 'react'
 import { SVG_SIZE } from '@/lib/constants'
+import { ptsStr } from '@/lib/geometry'
 import { MapDefs } from './MapDefs'
 import { RegionLayer } from './RegionLayer'
 import { TerrainLayer } from './TerrainLayer'
 import { CityLayer } from './CityLayer'
 import { TowerLayer } from './TowerLayer'
 import { HandleLayer } from './HandleLayer'
-import { ContinentHandles } from './ContinentHandles'
-import type { MapState, EditorMode, ContinentShape } from '@/types/map'
+import type { MapState, EditorMode } from '@/types/map'
 
 interface MapSVGProps {
   state: MapState
@@ -17,19 +17,20 @@ interface MapSVGProps {
   selectedRegion: string | null
   selectedCity: string | null
   selectedTerrain: string | null
+  selectedContinent: string | null
   onRegionClick?: (id: string) => void
   onCityClick?: (id: string) => void
   onTerrainClick?: (id: string) => void
+  onContinentClick?: (id: string) => void
   onVertexDrag?: (regionId: string, vertexIndex: number, x: number, y: number) => void
   onTerrainVertexDrag?: (terrainId: string, vertexIndex: number, x: number, y: number) => void
+  onContinentVertexDrag?: (targetId: string, vertexIndex: number, x: number, y: number) => void
   onCityDrag?: (cityId: string, x: number, y: number) => void
   onCityDragEnd?: () => void
   onDragEnd?: () => void
   getMapCoords?: (clientX: number, clientY: number) => [number, number]
   onMapClick?: (x: number, y: number) => void
-  onEdgeClick?: (targetType: 'region' | 'terrain', targetId: string, edgeIndex: number, x: number, y: number) => void
-  onContinentChange?: (data: Partial<ContinentShape>) => void
-  onContinentDragEnd?: () => void
+  onEdgeClick?: (targetType: 'region' | 'terrain' | 'continent', targetId: string, edgeIndex: number, x: number, y: number) => void
 }
 
 function MapSVGInner({
@@ -38,26 +39,41 @@ function MapSVGInner({
   selectedRegion,
   selectedCity,
   selectedTerrain,
+  selectedContinent,
   onRegionClick,
   onCityClick,
   onTerrainClick,
+  onContinentClick,
   onVertexDrag,
   onTerrainVertexDrag,
+  onContinentVertexDrag,
   onCityDrag,
   onCityDragEnd,
   onDragEnd,
   getMapCoords,
   onEdgeClick,
-  onContinentChange,
-  onContinentDragEnd,
 }: MapSVGProps) {
   const editable = mode === 'edit'
   const region = selectedRegion ? state.regions.find(r => r.id === selectedRegion) ?? null : null
   const terrainFeature = selectedTerrain ? state.terrain.find(t => t.id === selectedTerrain) ?? null : null
 
-  const c = state.continent ?? { oceanRadius: 418, landRx: 355, landRy: 348 }
-  const cx = 450
-  const cy = 450
+  const c = state.continent
+  const oceanBorder = c.oceanBorder
+  const landMasses = c.landMasses
+
+  // Determine which continent polygon to show handles for
+  let continentHandlePts: [number, number][] | null = null
+  let continentHandleId = ''
+  if (selectedContinent === 'ocean') {
+    continentHandlePts = oceanBorder
+    continentHandleId = 'ocean'
+  } else if (selectedContinent) {
+    const lm = landMasses.find(l => l.id === selectedContinent)
+    if (lm) {
+      continentHandlePts = lm.pts
+      continentHandleId = lm.id
+    }
+  }
 
   return (
     <svg
@@ -66,16 +82,49 @@ function MapSVGInner({
       xmlns="http://www.w3.org/2000/svg"
       style={{ width: SVG_SIZE, height: SVG_SIZE, overflow: 'visible', display: 'block' }}
     >
-      <MapDefs oceanRadius={c.oceanRadius} />
+      <MapDefs oceanBorder={oceanBorder} />
 
-      {/* Ocean */}
-      <circle cx={cx} cy={cy} r={450} fill="#060d18" />
-      <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#g-ocean)" />
-      <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#p-waves)" />
+      {/* Ocean background */}
+      <rect x={0} y={0} width={SVG_SIZE} height={SVG_SIZE} fill="#060d18" />
+      <polygon points={ptsStr(oceanBorder)} fill="url(#g-ocean)" />
+      <polygon points={ptsStr(oceanBorder)} fill="url(#p-waves)" />
+
+      {/* Ocean border clickable in edit mode */}
+      {editable && onContinentClick && (
+        <polygon
+          points={ptsStr(oceanBorder)}
+          fill="none"
+          stroke={selectedContinent === 'ocean' ? '#3a7abf' : 'transparent'}
+          strokeWidth={selectedContinent === 'ocean' ? 2 : 8}
+          className="cursor-pointer"
+          data-continent="ocean"
+          onClick={(e) => { e.stopPropagation(); onContinentClick('ocean') }}
+          pointerEvents="stroke"
+        />
+      )}
 
       <g clipPath="url(#clip-map)">
-        {/* Land mass */}
-        <ellipse cx={cx} cy={cy} rx={c.landRx} ry={c.landRy} fill="url(#g-land)" filter="url(#fx-rough)" />
+        {/* Land masses */}
+        {landMasses.map(lm => (
+          <g key={lm.id}>
+            <polygon
+              points={ptsStr(lm.pts)}
+              fill="url(#g-land)"
+              filter="url(#fx-rough)"
+            />
+            {editable && onContinentClick && (
+              <polygon
+                points={ptsStr(lm.pts)}
+                fill="transparent"
+                stroke={selectedContinent === lm.id ? '#8a7a40' : 'transparent'}
+                strokeWidth={selectedContinent === lm.id ? 2 : 0}
+                className="cursor-pointer"
+                data-continent={lm.id}
+                onClick={(e) => { e.stopPropagation(); onContinentClick(lm.id) }}
+              />
+            )}
+          </g>
+        ))}
 
         {/* Regions */}
         <RegionLayer
@@ -114,8 +163,8 @@ function MapSVGInner({
           getMapCoords={getMapCoords}
         />
 
-        {/* Vertex handles (editor only) */}
-        {editable && onVertexDrag && onTerrainVertexDrag && onDragEnd && getMapCoords && (
+        {/* Vertex handles for region/terrain */}
+        {editable && onVertexDrag && onTerrainVertexDrag && onDragEnd && getMapCoords && !selectedContinent && (
           <HandleLayer
             region={region}
             terrainFeature={terrainFeature}
@@ -128,16 +177,19 @@ function MapSVGInner({
         )}
 
         {/* Vignette */}
-        <circle cx={cx} cy={cy} r={c.oceanRadius} fill="url(#g-vig)" pointerEvents="none" />
+        <polygon points={ptsStr(oceanBorder)} fill="url(#g-vig)" pointerEvents="none" />
       </g>
 
-      {/* Continent shape handles (outside clip-path so always visible) */}
-      {editable && getMapCoords && onContinentChange && !selectedRegion && !selectedTerrain && (
-        <ContinentHandles
-          continent={c}
+      {/* Continent vertex handles (outside clip so always visible) */}
+      {editable && continentHandlePts && onContinentVertexDrag && onDragEnd && getMapCoords && (
+        <HandleLayer
+          continentPts={continentHandlePts}
+          continentId={continentHandleId}
+          onContinentVertexDrag={onContinentVertexDrag}
+          onDragEnd={onDragEnd}
           getMapCoords={getMapCoords}
-          onChange={onContinentChange}
-          onDragEnd={onContinentDragEnd}
+          onEdgeClick={onEdgeClick}
+          handleColor={selectedContinent === 'ocean' ? '#3a7abf' : '#8a7a40'}
         />
       )}
     </svg>

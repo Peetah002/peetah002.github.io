@@ -68,10 +68,15 @@ export interface CityConfig {
   cross?: boolean
 }
 
+export interface LandMass {
+  id: string
+  name: string
+  pts: [number, number][]
+}
+
 export interface ContinentShape {
-  oceanRadius: number      // outer circle radius (default 418)
-  landRx: number           // ellipse rx (default 355)
-  landRy: number           // ellipse ry (default 348)
+  oceanBorder: [number, number][]
+  landMasses: LandMass[]
 }
 
 export interface MapState {

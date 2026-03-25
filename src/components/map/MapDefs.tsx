@@ -1,10 +1,12 @@
 'use client'
 
+import { ptsStr } from '@/lib/geometry'
+
 interface MapDefsProps {
-  oceanRadius?: number
+  oceanBorder?: [number, number][]
 }
 
-export function MapDefs({ oceanRadius = 418 }: MapDefsProps) {
+export function MapDefs({ oceanBorder }: MapDefsProps) {
   return (
     <defs>
       <filter id="fx-rough">
@@ -42,7 +44,11 @@ export function MapDefs({ oceanRadius = 418 }: MapDefsProps) {
         <path d="M0,18 Q12,12 25,18 Q38,24 50,18" fill="none" stroke="#2a5a8a" strokeWidth={0.6} opacity={0.18} />
       </pattern>
       <clipPath id="clip-map">
-        <circle cx={450} cy={450} r={oceanRadius} />
+        {oceanBorder ? (
+          <polygon points={ptsStr(oceanBorder)} />
+        ) : (
+          <circle cx={450} cy={450} r={418} />
+        )}
       </clipPath>
     </defs>
   )

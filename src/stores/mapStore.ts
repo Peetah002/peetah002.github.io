@@ -2,8 +2,8 @@
 
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import type { MapState, Region, City, Tower, TerrainFeature, ContinentShape } from '@/types/map'
-import { DEF_REGIONS, DEF_CITIES, DEF_TOWER, DEF_TERRAIN } from '@/lib/mapData'
+import type { MapState, Region, City, Tower, TerrainFeature, ContinentShape, LandMass } from '@/types/map'
+import { DEF_REGIONS, DEF_CITIES, DEF_TOWER, DEF_TERRAIN, DEF_CONTINENT } from '@/lib/mapData'
 
 interface MapStore extends MapState {
   // Actions
@@ -19,12 +19,16 @@ interface MapStore extends MapState {
 
   setTower: (tower: Tower) => void
 
-  updateContinent: (data: Partial<ContinentShape>) => void
-
   setTerrain: (terrain: TerrainFeature[]) => void
   addTerrain: (feature: TerrainFeature) => void
   updateTerrain: (id: string, data: Partial<TerrainFeature>) => void
   removeTerrain: (id: string) => void
+
+  // Continent shape
+  updateOceanBorder: (pts: [number, number][]) => void
+  addLandMass: (lm: LandMass) => void
+  updateLandMass: (id: string, data: Partial<LandMass>) => void
+  removeLandMass: (id: string) => void
 
   importMap: (data: Partial<MapState>) => void
   resetMap: () => void
@@ -32,14 +36,22 @@ interface MapStore extends MapState {
   exportPlayerMap: () => Omit<MapState, 'version'> & { version: number }
 }
 
-const DEF_CONTINENT = { oceanRadius: 418, landRx: 355, landRy: 348 }
+function cloneContinent(): ContinentShape {
+  return {
+    oceanBorder: DEF_CONTINENT.oceanBorder.map(p => [...p] as [number, number]),
+    landMasses: DEF_CONTINENT.landMasses.map(lm => ({
+      ...lm,
+      pts: lm.pts.map(p => [...p] as [number, number]),
+    })),
+  }
+}
 
 const defaultState: MapState = {
   regions: DEF_REGIONS.map(r => ({ ...r, pts: r.pts.map(p => [...p] as [number, number]) })),
   cities: DEF_CITIES.map(c => ({ ...c })),
   tower: { ...DEF_TOWER },
   terrain: [...DEF_TERRAIN],
-  continent: { ...DEF_CONTINENT },
+  continent: cloneContinent(),
   version: 1,
 }
 
@@ -64,16 +76,32 @@ export const useMapStore = create<MapStore>()(
 
       setTower: (tower) => set({ tower }),
 
-      updateContinent: (data) => set(s => ({
-        continent: { ...s.continent, ...data },
-      })),
-
       setTerrain: (terrain) => set({ terrain }),
       addTerrain: (feature) => set(s => ({ terrain: [...s.terrain, feature] })),
       updateTerrain: (id, data) => set(s => ({
         terrain: s.terrain.map(t => t.id === id ? { ...t, ...data } : t),
       })),
       removeTerrain: (id) => set(s => ({ terrain: s.terrain.filter(t => t.id !== id) })),
+
+      // Continent
+      updateOceanBorder: (pts) => set(s => ({
+        continent: { ...s.continent, oceanBorder: pts },
+      })),
+      addLandMass: (lm) => set(s => ({
+        continent: { ...s.continent, landMasses: [...s.continent.landMasses, lm] },
+      })),
+      updateLandMass: (id, data) => set(s => ({
+        continent: {
+          ...s.continent,
+          landMasses: s.continent.landMasses.map(lm => lm.id === id ? { ...lm, ...data } : lm),
+        },
+      })),
+      removeLandMass: (id) => set(s => ({
+        continent: {
+          ...s.continent,
+          landMasses: s.continent.landMasses.filter(lm => lm.id !== id),
+        },
+      })),
 
       importMap: (data) => {
         set({
@@ -91,7 +119,7 @@ export const useMapStore = create<MapStore>()(
         cities: DEF_CITIES.map(c => ({ ...c })),
         tower: { ...DEF_TOWER },
         terrain: [...DEF_TERRAIN],
-        continent: { ...DEF_CONTINENT },
+        continent: cloneContinent(),
       }),
 
       exportMap: () => {
@@ -101,7 +129,6 @@ export const useMapStore = create<MapStore>()(
 
       exportPlayerMap: () => {
         const { regions, cities, tower, terrain, continent, version } = get()
-        // Strip DM-only notes from cities
         const playerCities = cities.map(({ notes, ...rest }) => rest) as City[]
         return { regions, cities: playerCities, tower, terrain, continent, version }
       },

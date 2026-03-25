@@ -10,6 +10,7 @@ import { CityInfoPanel } from '@/components/shared/CityInfoPanel'
 import { useMapStore } from '@/stores/mapStore'
 import { useUIStore } from '@/stores/uiStore'
 import { MAP_URL } from '@/lib/constants'
+import { DEF_CONTINENT } from '@/lib/mapData'
 import { RefreshCw, Download } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -72,7 +73,8 @@ export default function PlayerMapPage() {
     </div>
   }
 
-  const state = { regions, cities, tower, terrain, continent: continent ?? { oceanRadius: 418, landRx: 355, landRy: 348 }, version }
+  const c = continent ?? DEF_CONTINENT
+  const state = { regions, cities, tower, terrain, continent: c, version }
 
   return (
     <div className="h-screen overflow-hidden">
@@ -81,19 +83,13 @@ export default function PlayerMapPage() {
           Mappa di Eradriel
         </span>
         <div className="w-px h-6 bg-border flex-shrink-0 mx-0.5" />
-        <button
-          onClick={handleSync}
-          className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0"
-        >
-          <RefreshCw size={13} />
-          <span className="hidden sm:inline">Aggiorna</span>
+        <button onClick={handleSync}
+          className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0">
+          <RefreshCw size={13} /><span className="hidden sm:inline">Aggiorna</span>
         </button>
-        <button
-          onClick={handleImport}
-          className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0"
-        >
-          <Download size={13} />
-          <span className="hidden sm:inline">Importa</span>
+        <button onClick={handleImport}
+          className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0">
+          <Download size={13} /><span className="hidden sm:inline">Importa</span>
         </button>
       </TopBar>
 
@@ -103,6 +99,7 @@ export default function PlayerMapPage() {
         selectedRegion={null}
         selectedCity={selectedCity}
         selectedTerrain={null}
+        selectedContinent={null}
         onCityClick={handleCityClick}
         controlsRef={controlsRef}
       />
@@ -111,11 +108,7 @@ export default function PlayerMapPage() {
       <Compass visible={!panelOpen} />
       <Legend collapsed={legendCollapsed} onToggle={toggleLegend} visible={!panelOpen} />
 
-      <CityInfoPanel
-        city={city}
-        open={panelOpen}
-        onClose={() => selectCity(null)}
-      />
+      <CityInfoPanel city={city} open={panelOpen} onClose={() => selectCity(null)} />
     </div>
   )
 }
