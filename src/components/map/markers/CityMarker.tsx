@@ -53,15 +53,13 @@ function CityMarkerInner({ cfg, x, y }: CityMarkerProps) {
     )
   }
 
-  // Missione — banner on pole with quest marker
+  // Missione — flag on pole
   if (tri) {
     return (
       <g transform={`translate(${x},${y})`}>
-        <polygon points="0,-10 5,-5 0,-1" fill="#8B1e1e" stroke="#4a0e0e" strokeWidth={0.7} />
         <line x1={0} y1={-12} x2={0} y2={6} stroke="#5a3020" strokeWidth={1.5} strokeLinecap="round" />
-        <line x1={-4} y1={2} x2={4} y2={2} stroke="#5a3020" strokeWidth={1.2} strokeLinecap="round" />
-        <circle cx={0} cy={7} r={1.5} fill={inner || fill} />
-        {inner && <circle cx={0} cy={-5} r={2} fill={inner} opacity={0.8} />}
+        <polygon points="0,-12 8,-8 0,-4" fill={fill} stroke={dk} strokeWidth={0.7} />
+        <line x1={-3} y1={6} x2={3} y2={6} stroke="#5a3020" strokeWidth={1.2} strokeLinecap="round" />
       </g>
     )
   }

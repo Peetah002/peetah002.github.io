@@ -40,6 +40,7 @@ export interface City {
   type: CityType
   x: number
   y: number
+  color?: string
   description?: string
   notes?: string
 }

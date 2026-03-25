@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { Map, BookOpen, Clock, Pencil } from 'lucide-react'
+import { Map, BookOpen, Clock } from 'lucide-react'
 
 interface TopBarProps {
   children?: React.ReactNode
@@ -16,7 +16,6 @@ export function TopBar({ children }: TopBarProps) {
     { href: '/map', label: 'Mappa', icon: Map },
     { href: '/lore', label: 'Lore', icon: BookOpen },
     { href: '/timeline', label: 'Timeline', icon: Clock },
-    { href: '/editor', label: 'Editor', icon: Pencil },
   ]
 
   return (

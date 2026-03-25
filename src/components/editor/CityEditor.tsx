@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import type { City, CityType } from '@/types/map'
-import { CITY_CFG, REGIONS_LIST } from '@/lib/constants'
+import { CITY_CFG, REGIONS_LIST, COLOR_PALETTE, applyCityColor } from '@/lib/constants'
+import { useMapStore } from '@/stores/mapStore'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -37,11 +38,17 @@ export function CityEditor({
   const [pop, setPop] = useState(city?.pop ?? '')
   const [region, setRegion] = useState(city?.region ?? 'Reth Maar')
   const [type, setType] = useState<CityType>(city?.type ?? 'media')
+  const [color, setColor] = useState<string | undefined>(city?.color)
   const [description, setDescription] = useState(city?.description ?? '')
   const [notes, setNotes] = useState(city?.notes ?? '')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [applyToKingdom, setApplyToKingdom] = useState(false)
 
-  const cfg = CITY_CFG[type] || CITY_CFG.borgo
+  const updateCity = useMapStore(s => s.updateCity)
+  const cities = useMapStore(s => s.cities)
+
+  const baseCfg = CITY_CFG[type] || CITY_CFG.borgo
+  const cfg = applyCityColor(baseCfg, color)
 
   const handleSave = () => {
     const n = name.trim()
@@ -57,9 +64,17 @@ export function CityEditor({
       type,
       x: city?.x ?? Math.round(coords?.x ?? 450),
       y: city?.y ?? Math.round(coords?.y ?? 450),
+      color: color || undefined,
       description: description.trim() || undefined,
       notes: notes.trim() || undefined,
     })
+    // Apply color to all cities in the same kingdom
+    if (applyToKingdom && color) {
+      cities
+        .filter(c => c.region === region && c.id !== city?.id)
+        .forEach(c => updateCity(c.id, { color }))
+      toast.success('Colore applicato a tutto il regno')
+    }
     toast.success(isNew ? 'Città aggiunta' : 'Città salvata')
     onClose()
   }
@@ -126,6 +141,48 @@ export function CityEditor({
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Color palette */}
+            <div className="space-y-1.5">
+              <Label className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">Colore</Label>
+              <div className="flex flex-wrap gap-1.5">
+                {/* Default (no override) */}
+                <button
+                  type="button"
+                  onClick={() => setColor(undefined)}
+                  className={`w-6 h-6 rounded-full border-2 transition-all flex items-center justify-center text-[8px] ${
+                    !color ? 'border-gold ring-1 ring-gold/50' : 'border-border hover:border-gold-dim'
+                  }`}
+                  style={{ background: `conic-gradient(#c83030, #d4a020, #2a8a28, #2050c0, #8040c0, #c83030)` }}
+                  title="Default"
+                />
+                {COLOR_PALETTE.map(c => (
+                  <button
+                    key={c.value}
+                    type="button"
+                    onClick={() => setColor(c.value)}
+                    className={`w-6 h-6 rounded-full border-2 transition-all ${
+                      color === c.value ? 'border-gold ring-1 ring-gold/50 scale-110' : 'border-border hover:border-gold-dim'
+                    }`}
+                    style={{ backgroundColor: c.value }}
+                    title={c.label}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Apply to kingdom toggle */}
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={applyToKingdom}
+                onChange={(e) => setApplyToKingdom(e.target.checked)}
+                className="accent-gold w-3.5 h-3.5"
+              />
+              <span className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">
+                Applica colore a tutto il regno ({region})
+              </span>
+            </label>
 
             <div className="space-y-1.5">
               <Label className="font-heading text-[9px] tracking-wider uppercase text-muted-foreground">Descrizione (visibile ai giocatori)</Label>

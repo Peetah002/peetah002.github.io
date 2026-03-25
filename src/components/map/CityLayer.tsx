@@ -2,7 +2,7 @@
 
 import { memo, useCallback, useRef } from 'react'
 import type { City } from '@/types/map'
-import { CITY_CFG } from '@/lib/constants'
+import { CITY_CFG, applyCityColor } from '@/lib/constants'
 import { CityMarker } from './markers/CityMarker'
 
 interface CityLayerProps {
@@ -68,7 +68,8 @@ function CityLayerInner({
         .city-glow { animation: glow-pulse 2s ease-in-out infinite; }
       `}</style>
       {cities.map(city => {
-        const cfg = CITY_CFG[city.type] || CITY_CFG.borgo
+        const baseCfg = CITY_CFG[city.type] || CITY_CFG.borgo
+        const cfg = applyCityColor(baseCfg, city.color)
         const isSelected = city.id === selectedId
         return (
           <g

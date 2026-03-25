@@ -18,7 +18,7 @@ import { DEF_CONTINENT } from '@/lib/mapData'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import {
-  Eye, MapPin, Mountain, Plus, RotateCcw, Upload,
+  Eye, MapPin, Mountain, Plus, RotateCcw, Upload, Download,
   Layers, Globe,
 } from 'lucide-react'
 import { toast } from 'sonner'
@@ -40,7 +40,7 @@ export default function EditorPage() {
     updateCity, addCity, removeCity,
     addTerrain, updateTerrain, removeTerrain,
     updateOceanBorder, updateOceanLabel, addLandMass, updateLandMass, removeLandMass,
-    resetMap, exportMap,
+    resetMap, exportMap, importMap,
   } = store
 
   const {
@@ -300,6 +300,29 @@ export default function EditorPage() {
     toast.success('Mappa esportata')
   }, [exportMap])
 
+  const handleImport = useCallback(() => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'application/json,.json'
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target?.result as string)
+          if (!data.regions || !data.cities) throw new Error('Formato non valido')
+          importMap(data)
+          toast.success('Mappa importata')
+        } catch {
+          toast.error('File non valido')
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }, [importMap])
+
   const handleReset = useCallback(() => {
     resetMap(); setResetDialog(false); setMode('view')
     toast.success('Mappa reimpostata')
@@ -347,6 +370,11 @@ export default function EditorPage() {
         </button>
 
         <div className="w-px h-6 bg-border flex-shrink-0 mx-0.5" />
+
+        <button onClick={handleImport}
+          className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0">
+          <Download size={13} /><span className="hidden sm:inline">Importa</span>
+        </button>
 
         <button onClick={handleExport}
           className="h-8 px-2.5 rounded-md border bg-secondary/80 border-border text-foreground text-[10px] font-heading tracking-wider whitespace-nowrap flex items-center gap-1.5 hover:border-gold-dim hover:text-gold transition-all flex-shrink-0">

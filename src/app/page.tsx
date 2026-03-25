@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Map, Pencil, BookOpen, Clock } from 'lucide-react'
+import { Map, BookOpen, Clock } from 'lucide-react'
 
 export default function HomePage() {
   return (
@@ -33,24 +33,15 @@ export default function HomePage() {
           Mappa Interattiva del Mondo di Eradriel
         </p>
 
-        {/* Entry cards */}
-        <div className="grid sm:grid-cols-2 gap-4 mb-8">
+        {/* Entry card */}
+        <div className="flex justify-center mb-8">
           <Link
             href="/map"
-            className="group p-6 rounded-xl border border-border bg-card/50 hover:border-gold transition-all duration-200 hover:bg-accent/50"
+            className="group p-6 rounded-xl border border-border bg-card/50 hover:border-gold transition-all duration-200 hover:bg-accent/50 max-w-xs w-full"
           >
             <Map size={28} className="mx-auto mb-3 text-gold opacity-80 group-hover:opacity-100 transition-opacity" />
-            <h2 className="font-heading text-sm text-gold tracking-wider mb-1">Giocatore</h2>
+            <h2 className="font-heading text-sm text-gold tracking-wider mb-1">Esplora</h2>
             <p className="text-xs text-muted-foreground">Esplora la mappa del mondo</p>
-          </Link>
-
-          <Link
-            href="/editor"
-            className="group p-6 rounded-xl border border-border bg-card/50 hover:border-gold transition-all duration-200 hover:bg-accent/50"
-          >
-            <Pencil size={28} className="mx-auto mb-3 text-gold opacity-80 group-hover:opacity-100 transition-opacity" />
-            <h2 className="font-heading text-sm text-gold tracking-wider mb-1">Dungeon Master</h2>
-            <p className="text-xs text-muted-foreground">Modifica regioni, città e terreni</p>
           </Link>
         </div>
 
